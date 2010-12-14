@@ -1,0 +1,59 @@
+<html>
+  <script src="http://localhost:8080/application.js" type="text/javascript" charset="utf-8"></script>
+  <script src="http://cdn.socket.io/stable/socket.io.js"></script>
+  <script src="http://code.jquery.com/jquery-1.4.4.min.js" type="text/javascript" charset="utf-8"></script>
+
+  <script type="text/javascript" charset="utf-8">
+
+    function moveX(x, y) {
+      $('#preview').css({
+        'position' : 'absolute',
+        'left' : x + 'px',
+        'top' : y + 'px'
+      })
+    }
+
+    var jug = new Juggernaut;
+
+    jug.subscribe("main", function(message){
+      data = JSON.parse(message)
+      moveX(data.x, data.y);
+      console.log("Got data: " + message);
+    });
+
+    var socket = new io.Socket('localhost', {port: 8000});
+    socket.connect();
+
+    $(document).ready(function() {
+    });
+
+    function ratelimit(fn, ms) {
+      var last = (new Date()).getTime();
+      return (function() {
+        var now = (new Date()).getTime();
+        if (now - last > ms) {
+          last = now;
+          fn.apply(null, arguments);
+        }
+      });
+    }
+
+    $(document).mousemove(
+      ratelimit(function(e){
+        socket.send(JSON.stringify({
+          action: 'move',
+          x: e.pageX,
+          y: e.pageY,
+          w: $(window).width(),
+          h: $(window).height()
+        }))
+
+        moveX(e.pageX, e.pageY);
+
+      }, 40)
+    );
+  </script>
+  <body>
+    <span id="preview">X</span>
+  </body>
+</html>
